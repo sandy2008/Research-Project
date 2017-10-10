@@ -1,0 +1,200 @@
+* The specification of an input file
+Ex. sample00.stg
+
+          8
+          0          0          0
+          1          1          1          0
+          2          3          1          0
+          3          3          1          1
+          4          2          1          1
+          5          6          2          3          4
+          6          7          2          3          4
+          7          4          2          5          6
+          8          5          1          2
+          9          0          2          7          8
+
+The 1st line shows the total number of tasks excluding dummy tasks,
+such as the entrance task and the exit task
+Other lines have the information for tasks as following:
+ 1st column: task-id
+ 2nd column: execution cost for its task
+ 3rd column: the number of precedence tasks
+ other columns: precedence tasks
+
+Note that you must not assume that the task ids are sorted in increasing order.
+
+* The specification of a program
+- input specification
+The information for a task graph read at input_data() is stored
+into an array of a structure "_task" defined at support.h.
+
+The structure "_task" is defined as following:
+struct _task
+{
+    int no;          /* task id */ 
+    int cost;        /* execution cost */
+    int total_pre;   /* the number of precedence tasks */
+    int *pre;        /* precedence tasks */
+} *task;
+
+The following example shows a contents of an array "task"
+after reading sample.stg at input_data().
+
+	task[0].no = 0;
+	task[0].cost = 0;
+	task[0].total_pre = 0;
+	task[0].pre = NULL;
+
+	task[1].no = 1;
+	task[1].cost = 1;
+	task[1].total_pre = 1;
+	task[1].pre[0] = 0;
+
+	task[2].no = 2;
+	task[2].cost = 3;
+	task[2].total_pre = 1;
+	task[2].pre[0] = 1;
+
+  	task[3].no = 3;
+	task[3].cost = 3;
+	task[3].total_pre = 1;
+	task[3].pre[0] = 1;
+
+  	task[4].no = 4;
+	task[4].cost = 2;
+	task[4].total_pre = 1;
+	task[4].pre[0] = 1;
+
+  	task[5].no = 5;
+	task[5].cost = 6;
+	task[5].total_pre = 2;
+	task[5].pre[0] = 3;
+	task[5].pre[1] = 4;
+
+  	task[6].no = 6;
+	task[6].cost = 7;
+	task[6].total_pre = 2;
+	task[6].pre[0] = 3;
+	task[6].pre[1] = 4;
+
+  	task[7].no = 7;
+	task[7].cost = 4;
+	task[7].total_pre = 2;
+	task[7].pre[0] = 5;
+	task[7].pre[1] = 6;
+
+  	task[8].no = 8;
+	task[8].cost = 5;
+	task[8].total_pre = 1;
+	task[8].pre[0] = 2;
+
+  	task[9].no = 9;
+	task[9].cost = 0;
+	task[9].total_pre = 2;
+	task[9].pre[0] = 7;
+	task[9].pre[1] = 8;
+
+You can use such data for your scheduler.
+
+- output specification
+A global variable, namely total_cost, and a structure,
+namely _pe, can be used for output resutls.
+
+struct _pe
+{
+    int *task_no;
+    int *task_cost;
+} *pe;
+
+total_cost
+ finish time of the execution
+
+task_no and task_cost in the structure _pe keep assigned task-id
+and the execution cost of assigned task, respectively.
+
+The size of the array "pe" is the number of pes (total_pe).
+The i-th element of pe stands for the i-th processor.
+
+The following example shows the first task on the processor-0
+is 2 and its cost is 3. Similarly, the 2nd task on the processor-0
+is 4 and its cost is 2.
+
+	pe[1].task[0] = 2;
+	pe[1].cost[0] = 3;
+
+	pe[1].task[1] = 4;
+	pe[1].cost[1] = 2;
+
+When there is no assigned task, or in the idle state,
+the task-id becomes "-1".
+
+For instance, the following example shows there is an idle state
+on the processor-1 for 1 unit-time just after the execution of the task-3.
+
+	pe[1].task[0] = 3;
+	pe[1].cost[0] = 3;
+
+	pe[1].task[1] = -1;
+	pe[1].cost[1] = 1;
+
+
+Note that the entrance node and the exit node must not be stored
+in the array pe.
+
+The following example shows an example scheduled result, sample00.gnt for
+a sample task graph, sample00.stg.
+
+	total_cost = 16;
+
+	pe[0].task[0] = 1;
+	pe[0].cost[0] = 1;
+
+	pe[0].task[1] = 3;
+	pe[0].cost[1] = 3;
+
+	pe[0].task[2] = -1;
+	pe[0].cost[2] = 1;
+
+	pe[0].task[3] = 6;
+	pe[0].cost[3] = 7;
+
+	pe[0].task[4] = 7;
+	pe[0].cost[4] = 4;
+
+	pe[1].task[0] = 2;
+	pe[1].cost[0] = 3;
+
+	pe[1].task[1] = 4;
+	pe[1].cost[1] = 2;
+
+	pe[1].task[2] = 5;
+	pe[1].cost[2] = 6;
+
+	pe[1].task[3] = 8;
+	pe[1].cost[3] = 5;
+
+- output file
+The scheduled result in the array pe can be generated
+as an output file at output().
+The file name should be "the_name_of_task_graph.gnt".
+
+The following is an example of output.
+
+2              # the number of processors
+1              # indicting no data transfer. you can ignore this
+PE 1
+PE 2
+16             #total_cost
+      1      1 #pe[0].task[0]、pe[0].cost[0]
+      3      3 #pe[0].task[1]、pe[0].cost[1]
+      0      1 #IDLE
+      6      7
+      7      4
+      2      3 #pe[0].task[1]、pe[0].cost[1]
+      4      2
+      5      6
+      8      5
+"16"           #total_cost
+
+
+
