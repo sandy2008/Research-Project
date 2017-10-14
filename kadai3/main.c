@@ -24,6 +24,7 @@ main(int argc, char *argv[])
     
     int maxtask = 1; //task current num with maximum time
     int minpe = 0; // pe current num with minimum time
+    int min2pe = 0;// second smallest time pe
     int maxpe = 0;
     
     for(i = 0;i<total_task;i++){
@@ -63,29 +64,43 @@ main(int argc, char *argv[])
             if(checklist[i]&&(tasklist[i]==0)&&doinglist[i])
                 if(task[i].cost>=task[maxtask].cost)
                     maxtask = i;
-
-        if(maxtask==0)//for no more execution
-         for(i = 0;i<total_task;i++){
-            if((doinglist[i]==0)&&checklist[i]){
-                checklist[i]=0;
-            }
+        j = 0;
+        if(maxtask==0){//for no more execution
+        for(i = 0;i<total_pe;i++){
+                if(petime[i][0]>petime[minpe][0]){
+                    min2pe = i;
+                }
         }
+        for(i = 0;i<total_pe;i++){
+                if((petime[i][0]>petime[minpe][0])&&(petime[i][0]<petime[min2pe][0])){
+                    min2pe = i;
+                }
+        }
+        for(i = 0;i<total_pe;i++){
+            if(petime[i][0]==petime[min2pe][0])
+                checklist[pe[min2pe].task_no[petime[min2pe][1]]] = 0;
+        }
+         printf("%d,%d,%d\n",minpe,maxtask,petime[min2pe][0] - petime[minpe][0]);
+        pe[minpe].task_no[petime[minpe][1]]=maxtask;
+        pe[minpe].task_cost[petime[minpe][1]]=petime[min2pe][0] - petime[minpe][0]; //using greedy algorithm to calculate      
+        petime[minpe][0] = petime[min2pe][0];
+        petime[minpe][1]=petime[minpe][1]+1;
         
+        }
+        else{//for normal situations
         doinglist[maxtask] = 0;   
         petime[minpe][0] = task[maxtask].cost + petime[minpe][0];
         pe[minpe].task_no[petime[minpe][1]]=maxtask;
         pe[minpe].task_cost[petime[minpe][1]]=task[maxtask].cost; //using greedy algorithm to calculate
         printf("%d,%d,%d\n",minpe,maxtask,task[maxtask].cost);
         petime[minpe][1]=petime[minpe][1]+1;
-
-        j = 0;
+        }
+           j = 0;
         
         for(i = 0;i<total_task;i++){        
             j+=checklist[i];
 
         }
-        
-   
     }
       for(i = 0;i<total_pe;i++) //get min pe
             if(petime[i][0]>=petime[maxpe][0])
